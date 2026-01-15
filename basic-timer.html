@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础番茄时钟</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4A90E2;
+            font-family: 'Courier New', monospace;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .start-btn {
+            background-color: #4A90E2;
+            color: white;
+        }
+        .reset-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .settings {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .setting-group {
+            margin: 10px 0;
+        }
+        .setting-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .setting-group input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            text-align: center;
+        }
+        .apply-btn {
+            background-color: #4A90E2;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>番茄时钟</h1>
+        
+        <div class="timer" id="timer">25:00</div>
+        
+        <div class="controls">
+            <button class="reset-btn" onclick="resetTimer()">重置</button>
+            <button class="start-btn" onclick="toggleTimer()">开始</button>
+        </div>
+        
+        <div class="settings">
+            <h3>自定义时长</h3>
+            <div class="setting-group">
+                <label for="workTime">工作时长（分钟）:</label>
+                <input type="number" id="workTime" min="1" max="60" value="25">
+            </div>
+            <div class="setting-group">
+                <label for="breakTime">休息时长（分钟）:</label>
+                <input type="number" id="breakTime" min="1" max="30" value="5">
+            </div>
+            <button class="apply-btn" onclick="applySettings()">应用设置</button>
+            <div class="success" id="successMsg">设置已应用！</div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        var timer = null;
+        var currentSeconds = 25 * 60; // 25分钟
+        var isRunning = false;
+        var isWorkSession = true;
+        var workMinutes = 25;
+        var breakMinutes = 5;
+        
+        // 更新计时器显示
+        function updateDisplay() {
+            var minutes = Math.floor(currentSeconds / 60);
+            var seconds = currentSeconds % 60;
+            var displayText = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+            document.getElementById('timer').textContent = displayText;
+        }
+        
+        // 切换计时器状态
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.querySelector('.start-btn').textContent = '暂停';
+            
+            timer = setInterval(function() {
+                currentSeconds--;
+                updateDisplay();
+                
+                if (currentSeconds <= 0) {
+                    completeSession();
+                }
+            }, 1000);
+        }
+        
+        // 暂停计时器
+        function pauseTimer() {
+            if (!isRunning) return;
+            
+            isRunning = false;
+            document.querySelector('.start-btn').textContent = '开始';
+            
+            clearInterval(timer);
+        }
+        
+        // 重置计时器
+        function resetTimer() {
+            pauseTimer();
+            currentSeconds = isWorkSession ? workMinutes * 60 : breakMinutes * 60;
+            updateDisplay();
+        }
+        
+        // 完成当前阶段
+        function completeSession() {
+            pauseTimer();
+            
+            // 切换阶段
+            isWorkSession = !isWorkSession;
+            
+            // 设置新的时间
+            currentSeconds = isWorkSession ? workMinutes * 60 : breakMinutes * 60;
+            updateDisplay();
+            
+            // 显示提示
+            if (isWorkSession) {
+                alert('开始工作！');
+            } else {
+                alert('休息时间！');
+            }
+        }
+        
+        // 应用设置
+        function applySettings() {
+            var workInput = document.getElementById('workTime');
+            var breakInput = document.getElementById('breakTime');
+            
+            var newWorkMinutes = parseInt(workInput.value);
+            var newBreakMinutes = parseInt(breakInput.value);
+            
+            // 验证输入
+            if (isNaN(newWorkMinutes) || newWorkMinutes < 1 || newWorkMinutes > 60) {
+                alert('请输入有效的工作时长（1-60分钟）');
+                return;
+            }
+            
+            if (isNaN(newBreakMinutes) || newBreakMinutes < 1 || newBreakMinutes > 30) {
+                alert('请输入有效的休息时长（1-30分钟）');
+                return;
+            }
+            
+            // 更新设置
+            workMinutes = newWorkMinutes;
+            breakMinutes = newBreakMinutes;
+            
+            // 如果计时器未运行，更新当前时间
+            if (!isRunning) {
+                currentSeconds = isWorkSession ? workMinutes * 60 : breakMinutes * 60;
+                updateDisplay();
+            }
+            
+            // 显示成功消息
+            var successMsg = document.getElementById('successMsg');
+            successMsg.style.display = 'block';
+            setTimeout(function() {
+                successMsg.style.display = 'none';
+            }, 2000);
+        }
+        
+        // 初始化显示
+        updateDisplay();
+    </script>
+</body>
+</html>
